@@ -1,8 +1,8 @@
-# Task Tracker (Module 1)
+# Task Tracker
 
 A minimal FastAPI learning project: Task Tracker REST API + simple web frontend.
 
-## Architecture (ADR-001)
+## Architecture
 - **Backend:** Python + FastAPI + Pydantic
 - **Storage:** in-memory dict backed by a JSON file (`app/tasks.json`, created at runtime, gitignored)
 - **Frontend:** static HTML/CSS/JS calling the REST API
