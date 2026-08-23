@@ -7,8 +7,72 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Task Tracker</h1>
-  <p>Frontend coming in a later step. Backend health check: <code>http://localhost:8000/health</code></p>
+  <header class="app-header">
+    <div>
+      <h1>Task Tracker</h1>
+      <p class="subtitle">Kanban board backed by the FastAPI Task Tracker API</p>
+    </div>
+    <button type="button" class="button button-primary" id="new-task-button">New task</button>
+  </header>
+
+  <!-- Status banner: loading / empty / error messages will render here later -->
+  <p class="status-banner" id="status-banner" hidden></p>
+
+  <!--
+    Board layout. Each column's data-status matches the API enum exactly
+    (ToDo / InProgress / Done); the <h2> is the human label.
+    Cards are <li> elements so JS can later clear a column's <ul> and
+    re-append one <li class="card"> per task using the same structure.
+  -->
+  <main class="board" id="board">
+
+    <section class="column" data-status="ToDo">
+      <h2 class="column-title">To Do</h2>
+      <ul class="cards">
+        <li class="card" data-id="1" data-priority="High">
+          <h3 class="card-title">Write the Kanban layout</h3>
+          <p class="card-description">Static HTML first, then wire it to the API.</p>
+          <div class="card-meta">
+            <span class="priority" data-priority="High">High</span>
+            <span class="assignee">Selim</span>
+          </div>
+          <button type="button" class="button button-small edit-button">Edit</button>
+        </li>
+      </ul>
+    </section>
+
+    <section class="column" data-status="InProgress">
+      <h2 class="column-title">In Progress</h2>
+      <ul class="cards">
+        <li class="card" data-id="2" data-priority="Medium">
+          <h3 class="card-title">Review PATCH transition rules</h3>
+          <!-- No description: the paragraph is simply omitted -->
+          <div class="card-meta">
+            <span class="priority" data-priority="Medium">Medium</span>
+            <span class="assignee">Unassigned</span>
+          </div>
+          <button type="button" class="button button-small edit-button">Edit</button>
+        </li>
+      </ul>
+    </section>
+
+    <section class="column" data-status="Done">
+      <h2 class="column-title">Done</h2>
+      <ul class="cards">
+        <li class="card" data-id="3" data-priority="Low">
+          <h3 class="card-title">Ship the Module 2 endpoints</h3>
+          <p class="card-description">POST, GET, PATCH, DELETE with tests.</p>
+          <div class="card-meta">
+            <span class="priority" data-priority="Low">Low</span>
+            <span class="assignee">Selim</span>
+          </div>
+          <button type="button" class="button button-small edit-button">Edit</button>
+        </li>
+      </ul>
+    </section>
+
+  </main>
+
   <script src="app.js"></script>
 </body>
 </html>
