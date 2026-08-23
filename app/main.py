@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, Response, status
 
 from app import storage
 from app.models import TaskCreate, TaskPriority, TaskResponse, TaskStatus, TaskUpdate
@@ -58,3 +58,17 @@ def update_task(task_id: int, payload: TaskUpdate) -> TaskResponse:
             detail=f"Task with id {task_id} not found",
         )
     return task
+
+
+@app.delete(
+    "/tasks/{task_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    tags=["tasks"],
+)
+def delete_task(task_id: int) -> Response:
+    if not storage.delete_task(task_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Task with id {task_id} not found",
+        )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
