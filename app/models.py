@@ -37,6 +37,8 @@ def _normalize_tags(tags: list[str]) -> list[str]:
             raise ValueError("tags must not contain blank values")
         if len(cleaned) > 30:
             raise ValueError("each tag must be at most 30 characters")
+        if "," in cleaned:
+            raise ValueError("tags must not contain commas")  # the UI uses commas as the separator
         if cleaned not in normalized:
             normalized.append(cleaned)
     if len(normalized) > 10:

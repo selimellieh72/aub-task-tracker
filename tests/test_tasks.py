@@ -294,6 +294,12 @@ def test_create_task_tag_too_long_returns_422(client: TestClient):
     assert r.status_code == 422
 
 
+def test_create_task_tag_with_comma_returns_422(client: TestClient):
+    r = client.post("/tasks", json={"title": "T", "tags": ["a,b"]})
+    assert r.status_code == 422
+    assert "commas" in r.text
+
+
 @pytest.mark.parametrize("bad_tags", ["bug", [1, 2]])
 def test_create_task_tags_wrong_type_returns_422(client: TestClient, bad_tags):
     r = client.post("/tasks", json={"title": "x", "tags": bad_tags})
