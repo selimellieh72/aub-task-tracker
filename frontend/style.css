@@ -113,3 +113,5 @@ body[data-state="error"] .status-banner { background: #fef2f2; color: #991b1b; }
 .task-dialog:not(.editing) .edit-only { display: none; }
 .form-error { margin: 0; color: #991b1b; font-size: 0.9rem; }
 .task-form-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
+.task-form-header { display: flex; justify-content: space-between; align-items: center; }
+.task-form button:disabled { opacity: 0.6; cursor: wait; }

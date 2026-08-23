@@ -46,7 +46,10 @@
   <!-- Create / edit modal. Native <dialog>: Escape closes it for free. -->
   <dialog class="task-dialog" id="task-dialog">
     <form class="task-form" id="task-form" method="dialog" novalidate>
-      <h2 class="task-form-title" id="task-form-title">New task</h2>
+      <div class="task-form-header">
+        <h2 class="task-form-title" id="task-form-title">New task</h2>
+        <button type="button" class="button button-small" id="close-button" aria-label="Close">&#x2715;</button>
+      </div>
       <input type="hidden" name="id" />
 
       <label>Title

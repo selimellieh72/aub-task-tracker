@@ -84,6 +84,7 @@ function createCard(task) {
   editButton.type = "button";
   editButton.className = "button button-small edit-button";
   editButton.textContent = "Edit";
+  editButton.addEventListener("click", () => openModal(task));
   card.append(editButton);
 
   return card;
@@ -172,7 +173,11 @@ async function readErrorDetail(response) {
   try {
     const body = await response.json();
     if (typeof body.detail === "string") return body.detail;
-    if (Array.isArray(body.detail)) return body.detail.map((e) => e.msg).join("; ");
+    if (Array.isArray(body.detail)) {
+      return body.detail
+        .map((e) => (e.loc?.length ? `${e.loc[e.loc.length - 1]}: ${e.msg}` : e.msg))
+        .join("; ");
+    }
   } catch (_notJson) {
     // fall through
   }
@@ -184,13 +189,22 @@ async function readErrorDetail(response) {
 const dialog = document.getElementById("task-dialog");
 const form = document.getElementById("task-form");
 const formError = document.getElementById("form-error");
+const saveButton = document.getElementById("save-button");
+
+// The task being edited, or null in create mode. Used to PATCH only what changed.
+let editingTask = null;
+
+function showFormError(message) {
+  formError.textContent = message;
+  formError.hidden = !message;
+}
 
 // Opens the modal. With a task, the form is pre-filled for editing;
 // without one, it is reset for creating.
 function openModal(task = null) {
+  editingTask = task;
   form.reset();
-  formError.hidden = true;
-  formError.textContent = "";
+  showFormError("");
   dialog.classList.toggle("editing", task !== null);
   document.getElementById("task-form-title").textContent = task ? "Edit task" : "New task";
 
@@ -211,15 +225,84 @@ function closeModal() {
   dialog.close();
 }
 
+// Reads the form into an API payload. Empty description -> "", empty assignee -> null.
+function readForm() {
+  const fields = form.elements;
+  return {
+    title: fields.title.value.trim(),
+    description: fields.description.value.trim(),
+    assignee: fields.assignee.value.trim() || null,
+    priority: fields.priority.value,
+    status: fields.status.value,
+  };
+}
+
+async function submitForm(event) {
+  event.preventDefault();
+  const values = readForm();
+
+  if (values.title === "") {
+    showFormError("Title is required");
+    form.elements.title.focus();
+    return; // no request
+  }
+
+  let method;
+  let url;
+  let payload;
+  if (editingTask === null) {
+    method = "POST";
+    url = `${API_BASE}/tasks`;
+    const { status: _ignored, ...createFields } = values; // new tasks start as ToDo
+    payload = createFields;
+  } else {
+    method = "PATCH";
+    url = `${API_BASE}/tasks/${editingTask.id}`;
+    // Send only changed fields so an untouched status never triggers a same->same 422.
+    payload = Object.fromEntries(
+      Object.entries(values).filter(([key, value]) => value !== editingTask[key])
+    );
+    if (Object.keys(payload).length === 0) {
+      closeModal();
+      return;
+    }
+  }
+
+  saveButton.disabled = true;
+  try {
+    const response = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      showFormError(await readErrorDetail(response)); // modal stays open
+      return;
+    }
+    closeModal();
+    fetchTasks();
+  } catch (_networkError) {
+    showFormError("Could not reach the server. Check that the backend is running.");
+  } finally {
+    saveButton.disabled = false;
+  }
+}
+
 function enableModal() {
   document.getElementById("new-task-button").addEventListener("click", () => openModal());
   document.getElementById("cancel-button").addEventListener("click", closeModal);
+  document.getElementById("close-button").addEventListener("click", closeModal);
   // Click on the backdrop (outside the form) closes; clicks inside don't bubble to the dialog itself.
   dialog.addEventListener("click", (event) => {
     if (event.target === dialog) closeModal();
   });
-  // Submit behavior comes in the next step; for now just keep the dialog open.
-  form.addEventListener("submit", (event) => event.preventDefault());
+  // Fires for every close path, including Escape (native <dialog> behavior).
+  dialog.addEventListener("close", () => {
+    editingTask = null;
+    form.reset();
+    showFormError("");
+  });
+  form.addEventListener("submit", submitForm);
 }
 
 // ---------------------------------------------------------------- data
