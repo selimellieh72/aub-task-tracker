@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from fastapi import FastAPI, HTTPException, Response, status
+from fastapi.middleware.cors import CORSMiddleware
 
 from app import storage
 from app.business_rules import validate_status_transition
@@ -10,6 +11,22 @@ app = FastAPI(
     title="Task Tracker API",
     description="Module 1 Task Tracker learning project (no auth, no database — in-memory + JSON file persistence per ADR-001)",
     version="0.1.0",
+)
+
+# Local development origins for the static frontend (e.g. VS Code Live Server
+# or `python -m http.server 5500 -d frontend`). Not for production.
+FRONTEND_ORIGINS = [
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=FRONTEND_ORIGINS,
+    allow_methods=["GET", "POST", "PATCH", "DELETE"],
+    allow_headers=["Content-Type"],
 )
 
 
