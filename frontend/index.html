@@ -43,6 +43,45 @@
 
   </main>
 
+  <!-- Create / edit modal. Native <dialog>: Escape closes it for free. -->
+  <dialog class="task-dialog" id="task-dialog">
+    <form class="task-form" id="task-form" method="dialog" novalidate>
+      <h2 class="task-form-title" id="task-form-title">New task</h2>
+      <input type="hidden" name="id" />
+
+      <label>Title
+        <input type="text" name="title" maxlength="200" required autocomplete="off" />
+      </label>
+      <label>Description
+        <textarea name="description" rows="3" maxlength="2000"></textarea>
+      </label>
+      <label>Assignee
+        <input type="text" name="assignee" maxlength="100" autocomplete="off" />
+      </label>
+      <label>Priority
+        <select name="priority">
+          <option value="Low">Low</option>
+          <option value="Medium" selected>Medium</option>
+          <option value="High">High</option>
+        </select>
+      </label>
+      <label class="edit-only">Status
+        <select name="status">
+          <option value="ToDo">To Do</option>
+          <option value="InProgress">In Progress</option>
+          <option value="Done">Done</option>
+        </select>
+      </label>
+
+      <p class="form-error" id="form-error" hidden></p>
+
+      <div class="task-form-actions">
+        <button type="button" class="button" id="cancel-button">Cancel</button>
+        <button type="submit" class="button button-primary" id="save-button">Save</button>
+      </div>
+    </form>
+  </dialog>
+
   <script src="app.js"></script>
 </body>
 </html>

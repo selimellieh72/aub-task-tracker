@@ -179,6 +179,49 @@ async function readErrorDetail(response) {
   return fallback;
 }
 
+// ---------------------------------------------------------------- modal
+
+const dialog = document.getElementById("task-dialog");
+const form = document.getElementById("task-form");
+const formError = document.getElementById("form-error");
+
+// Opens the modal. With a task, the form is pre-filled for editing;
+// without one, it is reset for creating.
+function openModal(task = null) {
+  form.reset();
+  formError.hidden = true;
+  formError.textContent = "";
+  dialog.classList.toggle("editing", task !== null);
+  document.getElementById("task-form-title").textContent = task ? "Edit task" : "New task";
+
+  if (task) {
+    form.elements.id.value = String(task.id);
+    form.elements.title.value = task.title;
+    form.elements.description.value = task.description;
+    form.elements.assignee.value = task.assignee ?? "";
+    form.elements.priority.value = task.priority;
+    form.elements.status.value = task.status;
+  }
+
+  dialog.showModal();
+  form.elements.title.focus();
+}
+
+function closeModal() {
+  dialog.close();
+}
+
+function enableModal() {
+  document.getElementById("new-task-button").addEventListener("click", () => openModal());
+  document.getElementById("cancel-button").addEventListener("click", closeModal);
+  // Click on the backdrop (outside the form) closes; clicks inside don't bubble to the dialog itself.
+  dialog.addEventListener("click", (event) => {
+    if (event.target === dialog) closeModal();
+  });
+  // Submit behavior comes in the next step; for now just keep the dialog open.
+  form.addEventListener("submit", (event) => event.preventDefault());
+}
+
 // ---------------------------------------------------------------- data
 
 async function fetchTasks() {
@@ -203,5 +246,6 @@ async function fetchTasks() {
 
 document.addEventListener("DOMContentLoaded", () => {
   enableDragAndDrop();
+  enableModal();
   fetchTasks();
 });
