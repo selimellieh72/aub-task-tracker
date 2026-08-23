@@ -41,14 +41,17 @@ def get_all_tasks(
     status: Optional[TaskStatus] = None,
     priority: Optional[TaskPriority] = None,
     overdue: Optional[bool] = None,
+    tag: Optional[str] = None,
 ) -> list[TaskResponse]:
-    """Return tasks in insertion (id) order, optionally filtered by status/priority/overdue."""
+    """Return tasks in insertion (id) order, optionally filtered by status/priority/overdue/tag."""
+    wanted_tag = tag.strip().lower() if tag is not None else None
     return [
         task
         for task in _tasks.values()
         if (status is None or task.status == status)
         and (priority is None or task.priority == priority)
         and (overdue is None or task.is_overdue == overdue)
+        and (wanted_tag is None or wanted_tag in task.tags)
     ]
 
 
@@ -66,6 +69,8 @@ def update_task(task_id: int, updates: TaskUpdate) -> Optional[TaskResponse]:
     changes = updates.model_dump(exclude_unset=True)
     if changes.get("description", "") is None:
         changes["description"] = ""  # response model requires a str
+    if changes.get("tags", []) is None:
+        changes["tags"] = []  # response model requires a list; null means "clear"
     updated = existing.model_copy(update={**changes, "updated_at": _now()})
     _tasks[task_id] = updated
     return updated

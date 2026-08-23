@@ -57,8 +57,13 @@ def list_tasks(
         default=None,
         description="true = only overdue tasks, false = only non-overdue tasks, omitted = all",
     ),
+    tag: str | None = Query(
+        default=None,
+        min_length=1,
+        description="only tasks carrying this tag (trimmed + lowercased before matching)",
+    ),
 ) -> list[TaskResponse]:
-    return storage.get_all_tasks(status=status, priority=priority, overdue=overdue)
+    return storage.get_all_tasks(status=status, priority=priority, overdue=overdue, tag=tag)
 
 
 @app.get("/tasks/{task_id}", response_model=TaskResponse, tags=["tasks"])

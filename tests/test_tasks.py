@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 
 RESPONSE_FIELDS = {
     "id", "title", "description", "assignee",
-    "status", "priority", "due_date", "created_at", "updated_at",
+    "status", "priority", "due_date", "tags", "created_at", "updated_at",
     "is_overdue",
 }
 
@@ -261,3 +261,107 @@ def test_list_tasks_filter_by_overdue_returns_only_matches(client: TestClient):
 def test_list_tasks_invalid_overdue_returns_422(client: TestClient):
     r = client.get("/tasks", params={"overdue": "banana"})
     assert r.status_code == 422
+
+
+# ----------------------------------------------------------------------- Tags
+
+def test_create_task_with_tags_returns_normalized_deduped_tags(client: TestClient):
+    r = client.post("/tasks", json={"title": "tagged", "tags": ["Bug", " bug ", "Backend"]})
+    assert r.status_code == 201
+    body = r.json()
+    assert set(body) == RESPONSE_FIELDS
+    assert body["tags"] == ["bug", "backend"]
+
+
+def test_create_task_without_tags_returns_empty_tag_list(client: TestClient):
+    r = client.post("/tasks", json={"title": "untagged"})
+    assert r.status_code == 201
+    assert r.json()["tags"] == []
+
+
+def test_create_task_blank_tag_returns_422(client: TestClient):
+    r = client.post("/tasks", json={"title": "x", "tags": ["bug", "  "]})
+    assert r.status_code == 422
+
+
+def test_create_task_too_many_tags_returns_422(client: TestClient):
+    r = client.post("/tasks", json={"title": "x", "tags": [f"tag{n}" for n in range(11)]})
+    assert r.status_code == 422
+
+
+def test_create_task_tag_too_long_returns_422(client: TestClient):
+    r = client.post("/tasks", json={"title": "x", "tags": ["a" * 31]})
+    assert r.status_code == 422
+
+
+@pytest.mark.parametrize("bad_tags", ["bug", [1, 2]])
+def test_create_task_tags_wrong_type_returns_422(client: TestClient, bad_tags):
+    r = client.post("/tasks", json={"title": "x", "tags": bad_tags})
+    assert r.status_code == 422
+
+
+def test_patch_tags_returns_replaced_tags(client: TestClient):
+    created = client.post("/tasks", json={"title": "tagged", "tags": ["bug"]}).json()
+
+    r = client.patch(f"/tasks/{created['id']}", json={"tags": ["Frontend"]})
+    assert r.status_code == 200
+    assert r.json()["tags"] == ["frontend"]
+
+
+def test_patch_tags_empty_list_clears_tags(client: TestClient):
+    created = client.post("/tasks", json={"title": "tagged", "tags": ["bug"]}).json()
+
+    r = client.patch(f"/tasks/{created['id']}", json={"tags": []})
+    assert r.status_code == 200
+    assert r.json()["tags"] == []
+
+
+def test_patch_tags_null_clears_tags(client: TestClient):
+    created = client.post("/tasks", json={"title": "T", "tags": ["bug"]}).json()
+    r = client.patch(f"/tasks/{created['id']}", json={"tags": None})
+    assert r.status_code == 200
+    assert r.json()["tags"] == []
+
+
+def test_patch_other_field_preserves_tags(client: TestClient):
+    created = client.post("/tasks", json={"title": "tagged", "tags": ["bug", "backend"]}).json()
+
+    r = client.patch(f"/tasks/{created['id']}", json={"title": "Renamed"})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["title"] == "Renamed"
+    assert body["tags"] == ["bug", "backend"]
+
+
+def test_list_tasks_filter_by_tag_returns_only_matches(client: TestClient):
+    bug = client.post("/tasks", json={"title": "bug", "tags": ["bug", "backend"]}).json()
+    client.post("/tasks", json={"title": "ui", "tags": ["frontend"]})
+    client.post("/tasks", json={"title": "plain"})
+
+    r = client.get("/tasks", params={"tag": "bug"})
+    assert r.status_code == 200
+    assert [t["id"] for t in r.json()] == [bug["id"]]
+
+    r = client.get("/tasks", params={"tag": "BUG"})
+    assert r.status_code == 200
+    assert [t["id"] for t in r.json()] == [bug["id"]]
+
+    r = client.get("/tasks", params={"tag": "nothing"})
+    assert r.status_code == 200
+    assert r.json() == []
+
+
+def test_list_tasks_empty_tag_returns_422(client: TestClient):
+    r = client.get("/tasks", params={"tag": ""})
+    assert r.status_code == 422
+
+
+def test_list_tasks_filter_by_tag_and_overdue_returns_only_matches(client: TestClient):
+    yesterday = (date.today() - timedelta(days=1)).isoformat()
+    overdue_payload = {"title": "late", "due_date": yesterday, "tags": ["bug"]}
+    late = client.post("/tasks", json=overdue_payload).json()
+    client.post("/tasks", json={"title": "upcoming", "due_date": "2030-01-15", "tags": ["bug"]})
+
+    r = client.get("/tasks", params={"tag": "bug", "overdue": "true"})
+    assert r.status_code == 200
+    assert [t["id"] for t in r.json()] == [late["id"]]

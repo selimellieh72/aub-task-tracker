@@ -22,6 +22,12 @@
        filtering is backend-driven, so changing one refetches the board. -->
   <section class="filters" id="filters" aria-label="Board filters">
     <label><input type="checkbox" id="filter-overdue" /> Overdue only</label>
+    <label>Tag
+      <!-- Options are filled in by refreshTagFilter() from the tags seen so far. -->
+      <select id="filter-tag">
+        <option value="">All tags</option>
+      </select>
+    </label>
   </section>
 
   <!--
@@ -76,6 +82,9 @@
       </label>
       <label>Due date
         <input type="date" name="due_date" id="due_date" />
+      </label>
+      <label>Tags
+        <input type="text" name="tags" id="tags" placeholder="bug, backend (comma separated)" autocomplete="off" />
       </label>
       <label class="edit-only">Status
         <select name="status">

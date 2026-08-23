@@ -89,6 +89,19 @@ function createCard(task) {
 
   card.append(meta);
 
+  // Tag chips. The backend always sends a (normalized) list, possibly empty.
+  if (task.tags.length > 0) {
+    const tagList = document.createElement("ul");
+    tagList.className = "tags";
+    for (const tag of task.tags) {
+      const item = document.createElement("li");
+      item.className = "tag";
+      item.textContent = tag;
+      tagList.append(item);
+    }
+    card.append(tagList);
+  }
+
   const editButton = document.createElement("button");
   editButton.type = "button";
   editButton.className = "button button-small edit-button";
@@ -226,6 +239,7 @@ function openModal(task = null) {
     form.elements.assignee.value = task.assignee ?? "";
     form.elements.priority.value = task.priority;
     form.elements.due_date.value = task.due_date ?? "";
+    form.elements.tags.value = task.tags.join(", ");
     form.elements.status.value = task.status;
   }
 
@@ -239,6 +253,8 @@ function closeModal() {
 
 // Reads the form into an API payload. Empty description -> "", empty assignee -> null.
 // The date input is already "YYYY-MM-DD"; empty -> null, which clears it on PATCH.
+// Tags are split on commas and trimmed; the server owns lowercasing and deduping,
+// so the board always shows exactly what the backend stored.
 function readForm() {
   const fields = form.elements;
   return {
@@ -247,8 +263,21 @@ function readForm() {
     assignee: fields.assignee.value.trim() || null,
     priority: fields.priority.value,
     due_date: fields.due_date.value || null,
+    tags: fields.tags.value
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter((tag) => tag !== ""),
     status: fields.status.value,
   };
+}
+
+// Equality for form values. Arrays (tags) are compared item by item: two lists
+// are never ===, so a reference check would resend untouched tags on every edit.
+function sameValue(a, b) {
+  if (Array.isArray(a) && Array.isArray(b)) {
+    return a.length === b.length && a.every((item, index) => item === b[index]);
+  }
+  return a === b;
 }
 
 async function submitForm(event) {
@@ -275,7 +304,7 @@ async function submitForm(event) {
     url = `${API_BASE}/tasks/${editingTask.id}`;
     // Send only changed fields so an untouched status never triggers a same->same 422.
     payload = Object.fromEntries(
-      Object.entries(values).filter(([key, value]) => value !== editingTask[key])
+      Object.entries(values).filter(([key, value]) => !sameValue(value, editingTask[key]))
     );
     if (Object.keys(payload).length === 0) {
       closeModal();
@@ -324,18 +353,57 @@ function enableModal() {
 
 // Active board filters. Filtering is backend-driven, so this is turned into
 // GET /tasks query params rather than applied to the loaded tasks.
-const filters = { overdue: false };
+const filters = { overdue: false, tag: "" };
 
-// "" when nothing is filtered, otherwise e.g. "overdue=true".
+// Every tag seen so far. The dropdown is built from this, not from the current
+// response, so filtering by one tag never shrinks the list to that tag.
+const knownTags = new Set();
+
+const tagSelect = document.getElementById("filter-tag");
+
+// "" when nothing is filtered, otherwise e.g. "overdue=true&tag=bug".
 function filterQuery() {
   const params = new URLSearchParams();
   if (filters.overdue) params.set("overdue", "true");
+  if (filters.tag) params.set("tag", filters.tag);
   return params.toString();
+}
+
+function createOption(value, label) {
+  const option = document.createElement("option");
+  option.value = value;
+  option.textContent = label;
+  return option;
+}
+
+// Feeds the dropdown from `taskList`. An unfiltered response is the whole truth
+// and replaces what we knew; a filtered one can only add. Returns true when the
+// selected tag has disappeared, which means the caller must refetch unfiltered.
+function refreshTagFilter(taskList, isFiltered) {
+  if (!isFiltered) knownTags.clear();
+  for (const task of taskList) {
+    for (const tag of task.tags) knownTags.add(tag);
+  }
+
+  const options = [...knownTags].sort();
+  const selectionDropped = filters.tag !== "" && !options.includes(filters.tag);
+  if (selectionDropped) filters.tag = "";
+
+  tagSelect.replaceChildren(
+    createOption("", "All tags"),
+    ...options.map((tag) => createOption(tag, tag))
+  );
+  tagSelect.value = filters.tag;
+  return selectionDropped;
 }
 
 function enableFilters() {
   document.getElementById("filter-overdue").addEventListener("change", (event) => {
     filters.overdue = event.target.checked;
+    fetchTasks();
+  });
+  tagSelect.addEventListener("change", (event) => {
+    filters.tag = event.target.value;
     fetchTasks();
   });
 }
@@ -352,6 +420,10 @@ async function fetchTasks() {
     }
     tasks = await response.json();
     renderBoard(tasks);
+    if (refreshTagFilter(tasks, query !== "")) {
+      fetchTasks(); // the filtered tag no longer exists; reload without it
+      return;
+    }
     if (tasks.length === 0) {
       setState(
         "empty",

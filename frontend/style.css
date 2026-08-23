@@ -179,6 +179,17 @@ body[data-state="loading"] .status-banner::before { animation: pulse 1.2s ease-i
   accent-color: var(--accent);
   cursor: pointer;
 }
+.filters select {
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  cursor: pointer;
+}
 
 /* ------------------------------------------------------------------ board */
 .board {
@@ -337,6 +348,27 @@ body[data-state="loading"] .board { opacity: 0.5; pointer-events: none; }
   height: 6px;
   border-radius: 50%;
   background: var(--text-faint);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0 0 0.65rem;
+  padding: 0;
+  list-style: none;
+}
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--info-bg);
+  color: var(--info-fg);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
 }
 
 .edit-button { width: 100%; justify-content: center; }
