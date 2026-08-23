@@ -12,10 +12,24 @@ const banner = document.getElementById("status-banner");
 
 // ---------------------------------------------------------------- helpers
 
-function setBanner(message) {
-  // An empty message hides the banner entirely.
-  banner.textContent = message;
+// UI state: "loading" | "ready" | "empty" | "error".
+// The board itself is always rendered; the state only drives the banner
+// (and a body[data-state] hook for CSS).
+function setState(state, message = "") {
+  document.body.dataset.state = state;
+  banner.replaceChildren();
   banner.hidden = !message;
+  if (!message) return;
+
+  banner.append(message);
+  if (state === "error") {
+    const retry = document.createElement("button");
+    retry.type = "button";
+    retry.className = "button button-small";
+    retry.textContent = "Retry";
+    retry.addEventListener("click", fetchTasks);
+    banner.append(" ", retry);
+  }
 }
 
 function comparePriorityThenId(a, b) {
@@ -72,20 +86,23 @@ function createCard(task) {
 
 function renderBoard(taskList) {
   for (const status of STATUSES) {
-    const column = document.querySelector(`.column[data-status="${status}"] .cards`);
-    column.replaceChildren(); // clear; the column itself stays visible
-
-    taskList
+    const section = document.querySelector(`.column[data-status="${status}"]`);
+    const list = section.querySelector(".cards");
+    const inColumn = taskList
       .filter((task) => task.status === status)
-      .sort(comparePriorityThenId)
-      .forEach((task) => column.append(createCard(task)));
+      .sort(comparePriorityThenId);
+
+    // Clear and rebuild. An empty <ul> stays in the DOM (the placeholder text
+    // is CSS-only), so the column remains a valid drop target later.
+    list.replaceChildren(...inColumn.map(createCard));
+    section.querySelector(".column-count").textContent = String(inColumn.length);
   }
 }
 
 // ---------------------------------------------------------------- data
 
 async function fetchTasks() {
-  setBanner("Loading tasks…");
+  setState("loading", "Loading tasks…");
   try {
     const response = await fetch(`${API_BASE}/tasks`);
     if (!response.ok) {
@@ -93,10 +110,14 @@ async function fetchTasks() {
     }
     tasks = await response.json();
     renderBoard(tasks);
-    setBanner(tasks.length === 0 ? "No tasks yet." : "");
+    if (tasks.length === 0) {
+      setState("empty", "No tasks yet. Create one to get started.");
+    } else {
+      setState("ready");
+    }
   } catch (error) {
     renderBoard([]);
-    setBanner(`Could not load tasks: ${error.message}`);
+    setState("error", `Could not load tasks: ${error.message}`);
   }
 }
 

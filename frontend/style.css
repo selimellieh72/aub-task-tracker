@@ -65,3 +65,23 @@ body {
 @media (max-width: 800px) {
   .board { grid-template-columns: 1fr; }
 }
+
+/* --- Module 3: board states (loading / ready / empty / error) --- */
+.column-count {
+  font-weight: 400;
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+.cards:empty::before {
+  content: "No tasks";
+  display: block;
+  padding: 1rem;
+  border: 1px dashed #d1d5db;
+  border-radius: 6px;
+  color: #9ca3af;
+  font-size: 0.85rem;
+  text-align: center;
+}
+body[data-state="loading"] .board { opacity: 0.5; }
+body[data-state="empty"] .status-banner { background: #eff6ff; color: #1e40af; }
+body[data-state="error"] .status-banner { background: #fef2f2; color: #991b1b; }
