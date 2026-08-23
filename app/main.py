@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from fastapi import FastAPI, status
+from fastapi import FastAPI, HTTPException, status
 
 from app import storage
 from app.models import TaskCreate, TaskPriority, TaskResponse, TaskStatus
@@ -36,3 +36,14 @@ def list_tasks(
     priority: TaskPriority | None = None,
 ) -> list[TaskResponse]:
     return storage.get_all_tasks(status=status, priority=priority)
+
+
+@app.get("/tasks/{task_id}", response_model=TaskResponse, tags=["tasks"])
+def get_task(task_id: int) -> TaskResponse:
+    task = storage.get_task_by_id(task_id)
+    if task is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Task with id {task_id} not found",
+        )
+    return task
