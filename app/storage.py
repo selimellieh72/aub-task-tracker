@@ -8,7 +8,7 @@ this module without changing any of the function signatures below.
 from datetime import datetime, timezone
 from typing import Optional
 
-from app.models import TaskCreate, TaskResponse, TaskUpdate
+from app.models import TaskCreate, TaskPriority, TaskResponse, TaskStatus, TaskUpdate
 
 _tasks: dict[int, TaskResponse] = {}
 _next_id: int = 1
@@ -37,9 +37,17 @@ def add_task(task: TaskCreate) -> TaskResponse:
     return created
 
 
-def get_all_tasks() -> list[TaskResponse]:
-    """Return every task in insertion order (which is id order)."""
-    return list(_tasks.values())
+def get_all_tasks(
+    status: Optional[TaskStatus] = None,
+    priority: Optional[TaskPriority] = None,
+) -> list[TaskResponse]:
+    """Return tasks in insertion (id) order, optionally filtered by status/priority."""
+    return [
+        task
+        for task in _tasks.values()
+        if (status is None or task.status == status)
+        and (priority is None or task.priority == priority)
+    ]
 
 
 def get_task_by_id(task_id: int) -> Optional[TaskResponse]:

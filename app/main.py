@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from fastapi import FastAPI, status
 
 from app import storage
-from app.models import TaskCreate, TaskResponse
+from app.models import TaskCreate, TaskPriority, TaskResponse, TaskStatus
 
 app = FastAPI(
     title="Task Tracker API",
@@ -28,3 +28,11 @@ def health_check():
 )
 def create_task(payload: TaskCreate) -> TaskResponse:
     return storage.add_task(payload)
+
+
+@app.get("/tasks", response_model=list[TaskResponse], tags=["tasks"])
+def list_tasks(
+    status: TaskStatus | None = None,
+    priority: TaskPriority | None = None,
+) -> list[TaskResponse]:
+    return storage.get_all_tasks(status=status, priority=priority)
