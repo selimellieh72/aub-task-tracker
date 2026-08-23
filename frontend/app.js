@@ -178,7 +178,7 @@ async function moveTask(id, targetStatus) {
       renderBoard(tasks);
       setState("ready");
       // Filtering happens on the server: the moved task may no longer match.
-      if (filterQuery()) fetchTasks();
+      if (filterQuery()) fetchTasks({ quiet: true });
       return;
     }
 
@@ -328,7 +328,7 @@ async function submitForm(event) {
       return;
     }
     closeModal();
-    fetchTasks();
+    fetchTasks({ quiet: true });
   } catch (_networkError) {
     showFormError("Could not reach the server. Check that the backend is running.");
   } finally {
@@ -404,18 +404,20 @@ function refreshTagFilter(taskList, isFiltered) {
 function enableFilters() {
   document.getElementById("filter-overdue").addEventListener("change", (event) => {
     filters.overdue = event.target.checked;
-    fetchTasks();
+    fetchTasks({ quiet: true });
   });
   tagSelect.addEventListener("change", (event) => {
     filters.tag = event.target.value;
-    fetchTasks();
+    fetchTasks({ quiet: true });
   });
 }
 
 // ---------------------------------------------------------------- data
 
-async function fetchTasks() {
-  setState("loading", "Loading tasks…");
+// `quiet` refetches keep the current board on screen instead of flashing the
+// loading banner (which sits above the filter bar and would shift it down).
+async function fetchTasks({ quiet = false } = {}) {
+  if (!quiet) setState("loading", "Loading tasks…");
   const query = filterQuery();
   try {
     const response = await fetch(`${API_BASE}/tasks${query ? `?${query}` : ""}`);
@@ -425,7 +427,7 @@ async function fetchTasks() {
     tasks = await response.json();
     renderBoard(tasks);
     if (refreshTagFilter(tasks, query !== "")) {
-      fetchTasks(); // the filtered tag no longer exists; reload without it
+      fetchTasks({ quiet: true }); // the filtered tag no longer exists; reload without it
       return;
     }
     if (tasks.length === 0) {
