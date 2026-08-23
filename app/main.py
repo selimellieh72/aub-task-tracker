@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from fastapi import FastAPI, HTTPException, Response, status
 
 from app import storage
+from app.business_rules import validate_status_transition
 from app.models import TaskCreate, TaskPriority, TaskResponse, TaskStatus, TaskUpdate
 
 app = FastAPI(
@@ -51,6 +52,15 @@ def get_task(task_id: int) -> TaskResponse:
 
 @app.patch("/tasks/{task_id}", response_model=TaskResponse, tags=["tasks"])
 def update_task(task_id: int, payload: TaskUpdate) -> TaskResponse:
+    if payload.status is not None:
+        existing = storage.get_task_by_id(task_id)
+        if existing is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Task with id {task_id} not found",
+            )
+        validate_status_transition(existing.status, payload.status)
+
     task = storage.update_task(task_id, payload)
     if task is None:
         raise HTTPException(
