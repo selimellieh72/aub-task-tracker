@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from fastapi import FastAPI, HTTPException, status
 
 from app import storage
-from app.models import TaskCreate, TaskPriority, TaskResponse, TaskStatus
+from app.models import TaskCreate, TaskPriority, TaskResponse, TaskStatus, TaskUpdate
 
 app = FastAPI(
     title="Task Tracker API",
@@ -41,6 +41,17 @@ def list_tasks(
 @app.get("/tasks/{task_id}", response_model=TaskResponse, tags=["tasks"])
 def get_task(task_id: int) -> TaskResponse:
     task = storage.get_task_by_id(task_id)
+    if task is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Task with id {task_id} not found",
+        )
+    return task
+
+
+@app.patch("/tasks/{task_id}", response_model=TaskResponse, tags=["tasks"])
+def update_task(task_id: int, payload: TaskUpdate) -> TaskResponse:
+    task = storage.update_task(task_id, payload)
     if task is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
