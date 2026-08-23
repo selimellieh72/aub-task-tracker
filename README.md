@@ -4,17 +4,18 @@ A minimal FastAPI learning project: Task Tracker REST API + simple web frontend.
 
 ## Architecture (ADR-001)
 - **Backend:** Python + FastAPI + Pydantic
-- **Storage:** in-memory dict backed by a JSON file (`backend/tasks.json`, created at runtime, gitignored)
+- **Storage:** in-memory dict backed by a JSON file (`app/tasks.json`, created at runtime, gitignored)
 - **Frontend:** static HTML/CSS/JS calling the REST API
 - No authentication, no database, no Docker, no real-time updates, no notifications
 
 ## Folder Structure
 ```
 task-tracker/
-├── backend/
+├── app/
 │   ├── main.py          # FastAPI app, routes
-│   ├── models.py        # Pydantic models (stub — CRUD in next step)
-│   ├── storage.py       # JSON load/save + in-memory cache (stub)
+│   ├── models.py        # Pydantic models + enums
+│   ├── storage.py       # in-memory store (JSON persistence later)
+│   ├── tests/           # verification scripts
 │   ├── tasks.json       # created at runtime, gitignored
 │   └── requirements.txt
 ├── frontend/
@@ -37,7 +38,7 @@ task-tracker/
 
 2. Install dependencies:
    ```bash
-   pip install -r backend/requirements.txt
+   pip install -r app/requirements.txt
    ```
 
 3. Copy the example environment file:
@@ -50,7 +51,7 @@ task-tracker/
 
 From the project root:
 ```bash
-uvicorn backend.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8000
 ```
 
 ## Test the health endpoint

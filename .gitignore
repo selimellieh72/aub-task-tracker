@@ -5,4 +5,4 @@ venv/
 .venv/
 .pytest_cache/
 *.egg-info/
-backend/tasks.json
+app/tasks.json

@@ -8,7 +8,7 @@ this module without changing any of the function signatures below.
 from datetime import datetime, timezone
 from typing import Optional
 
-from backend.models import TaskCreate, TaskResponse, TaskUpdate
+from app.models import TaskCreate, TaskResponse, TaskUpdate
 
 _tasks: dict[int, TaskResponse] = {}
 _next_id: int = 1
@@ -54,6 +54,8 @@ def update_task(task_id: int, updates: TaskUpdate) -> Optional[TaskResponse]:
         return None
 
     changes = updates.model_dump(exclude_unset=True)
+    if changes.get("description", "") is None:
+        changes["description"] = ""  # response model requires a str
     updated = existing.model_copy(update={**changes, "updated_at": _now()})
     _tasks[task_id] = updated
     return updated
