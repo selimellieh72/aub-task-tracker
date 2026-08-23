@@ -20,6 +20,7 @@ FRONTEND_ORIGINS = [
     "http://127.0.0.1:5500",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "null",  # pages opened directly from disk (file://) send Origin: null
 ]
 
 app.add_middleware(
