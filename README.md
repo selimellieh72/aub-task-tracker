@@ -15,9 +15,13 @@ task-tracker/
 │   ├── main.py          # FastAPI app, routes
 │   ├── models.py        # Pydantic models + enums
 │   ├── storage.py       # in-memory store (JSON persistence later)
-│   ├── tests/           # verification scripts
+│   ├── business_rules.py # status-transition rules
 │   ├── tasks.json       # created at runtime, gitignored
 │   └── requirements.txt
+├── tests/
+│   ├── conftest.py      # pytest fixtures (TestClient, storage reset)
+│   ├── test_tasks.py    # endpoint tests
+│   └── verify_a.py      # Part A model verification script
 ├── frontend/
 │   ├── index.html
 │   ├── app.js
