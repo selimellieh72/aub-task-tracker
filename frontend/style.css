@@ -85,3 +85,8 @@ body {
 body[data-state="loading"] .board { opacity: 0.5; }
 body[data-state="empty"] .status-banner { background: #eff6ff; color: #1e40af; }
 body[data-state="error"] .status-banner { background: #fef2f2; color: #991b1b; }
+
+/* --- Module 3: drag and drop --- */
+.card { cursor: grab; }
+.card.dragging { opacity: 0.4; }
+.column.drop-target { outline: 2px dashed #2563eb; outline-offset: -2px; }

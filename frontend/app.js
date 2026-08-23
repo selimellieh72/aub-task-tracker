@@ -45,6 +45,13 @@ function createCard(task) {
   card.className = "card";
   card.dataset.id = String(task.id);
   card.dataset.priority = task.priority;
+  card.draggable = true;
+  card.addEventListener("dragstart", (event) => {
+    event.dataTransfer.setData("text/plain", String(task.id));
+    event.dataTransfer.effectAllowed = "move";
+    card.classList.add("dragging");
+  });
+  card.addEventListener("dragend", () => card.classList.remove("dragging"));
 
   const title = document.createElement("h3");
   title.className = "card-title";
@@ -99,6 +106,79 @@ function renderBoard(taskList) {
   }
 }
 
+// ---------------------------------------------------------------- drag & drop
+
+// Columns are the drop targets. Registered once; cards are re-created on
+// every render, so their listeners live in createCard().
+function enableDragAndDrop() {
+  for (const column of document.querySelectorAll(".column")) {
+    column.addEventListener("dragover", (event) => {
+      event.preventDefault(); // required to allow dropping
+      event.dataTransfer.dropEffect = "move";
+      column.classList.add("drop-target");
+    });
+    column.addEventListener("dragleave", (event) => {
+      if (!column.contains(event.relatedTarget)) {
+        column.classList.remove("drop-target");
+      }
+    });
+    column.addEventListener("drop", (event) => {
+      event.preventDefault();
+      column.classList.remove("drop-target");
+      const id = Number(event.dataTransfer.getData("text/plain"));
+      moveTask(id, column.dataset.status);
+    });
+  }
+}
+
+// Optimistic status change: move locally, PATCH, revert on any failure.
+async function moveTask(id, targetStatus) {
+  const task = tasks.find((t) => t.id === id);
+  if (!task || task.status === targetStatus) return; // same column: no request
+
+  const previousStatus = task.status;
+  task.status = targetStatus;
+  renderBoard(tasks);
+
+  try {
+    const response = await fetch(`${API_BASE}/tasks/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: targetStatus }),
+    });
+
+    if (response.ok) {
+      const updated = await response.json();
+      tasks = tasks.map((t) => (t.id === id ? updated : t));
+      renderBoard(tasks);
+      setState("ready");
+      return;
+    }
+
+    task.status = previousStatus;
+    renderBoard(tasks);
+    setState("error", `Move failed: ${await readErrorDetail(response)}`);
+  } catch (_networkError) {
+    task.status = previousStatus;
+    renderBoard(tasks);
+    setState("error", "Move failed: could not reach the server. Check that the backend is running.");
+  }
+}
+
+// Pulls a readable message out of a FastAPI error body.
+// `detail` is a string for our own HTTPExceptions and a list for Pydantic 422s.
+async function readErrorDetail(response) {
+  const fallback = `server responded with ${response.status}`;
+  try {
+    const body = await response.json();
+    if (typeof body.detail === "string") return body.detail;
+    if (Array.isArray(body.detail)) return body.detail.map((e) => e.msg).join("; ");
+  } catch (_notJson) {
+    // fall through
+  }
+  return fallback;
+}
+
 // ---------------------------------------------------------------- data
 
 async function fetchTasks() {
@@ -121,4 +201,7 @@ async function fetchTasks() {
   }
 }
 
-document.addEventListener("DOMContentLoaded", fetchTasks);
+document.addEventListener("DOMContentLoaded", () => {
+  enableDragAndDrop();
+  fetchTasks();
+});
