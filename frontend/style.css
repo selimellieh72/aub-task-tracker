@@ -1,0 +1,5 @@
+/* Task Tracker styles (per ADR-001). Minimal placeholder for now. */
+body {
+  font-family: system-ui, sans-serif;
+  margin: 2rem;
+}
