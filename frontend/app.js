@@ -160,7 +160,9 @@ async function moveTask(id, targetStatus) {
   if (!task || task.status === targetStatus) return; // same column: no request
 
   const previousStatus = task.status;
+  const previousOverdue = task.is_overdue;
   task.status = targetStatus;
+  if (targetStatus === "Done") task.is_overdue = false; // Done is never overdue; don't flash a stale pill
   renderBoard(tasks);
 
   try {
@@ -181,10 +183,12 @@ async function moveTask(id, targetStatus) {
     }
 
     task.status = previousStatus;
+    task.is_overdue = previousOverdue;
     renderBoard(tasks);
     setState("error", `Move failed: ${await readErrorDetail(response)}`);
   } catch (_networkError) {
     task.status = previousStatus;
+    task.is_overdue = previousOverdue;
     renderBoard(tasks);
     setState("error", "Move failed: could not reach the server. Check that the backend is running.");
   }
