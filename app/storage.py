@@ -40,13 +40,15 @@ def add_task(task: TaskCreate) -> TaskResponse:
 def get_all_tasks(
     status: Optional[TaskStatus] = None,
     priority: Optional[TaskPriority] = None,
+    overdue: Optional[bool] = None,
 ) -> list[TaskResponse]:
-    """Return tasks in insertion (id) order, optionally filtered by status/priority."""
+    """Return tasks in insertion (id) order, optionally filtered by status/priority/overdue."""
     return [
         task
         for task in _tasks.values()
         if (status is None or task.status == status)
         and (priority is None or task.priority == priority)
+        and (overdue is None or task.is_overdue == overdue)
     ]
 
 

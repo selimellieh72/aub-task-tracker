@@ -18,6 +18,12 @@
   <!-- Status banner: loading / empty / error messages will render here later -->
   <p class="status-banner" id="status-banner" hidden></p>
 
+  <!-- Board filters. Every control here maps to a GET /tasks query param;
+       filtering is backend-driven, so changing one refetches the board. -->
+  <section class="filters" id="filters" aria-label="Board filters">
+    <label><input type="checkbox" id="filter-overdue" /> Overdue only</label>
+  </section>
+
   <!--
     Board layout. Each column's data-status matches the API enum exactly
     (ToDo / InProgress / Done); the <h2> is the human label.
@@ -67,6 +73,9 @@
           <option value="Medium" selected>Medium</option>
           <option value="High">High</option>
         </select>
+      </label>
+      <label>Due date
+        <input type="date" name="due_date" id="due_date" />
       </label>
       <label class="edit-only">Status
         <select name="status">

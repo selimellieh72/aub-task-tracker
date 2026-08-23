@@ -147,6 +147,39 @@ body[data-state="error"] .status-banner { background: var(--error-bg); color: va
 body[data-state="error"] .status-banner::before { background: var(--high-fg); }
 body[data-state="loading"] .status-banner::before { animation: pulse 1.2s ease-in-out infinite; }
 
+/* ---------------------------------------------------------------- filters */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin: 0 0 1.25rem;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-sm);
+}
+.filters label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.filters input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
 /* ------------------------------------------------------------------ board */
 .board {
   display: grid;
@@ -281,7 +314,8 @@ body[data-state="loading"] .board { opacity: 0.5; pointer-events: none; }
   font-size: 0.78rem;
   color: var(--text-muted);
 }
-.priority {
+.priority,
+.due {
   display: inline-flex;
   align-items: center;
   padding: 0.15rem 0.55rem;
@@ -295,6 +329,7 @@ body[data-state="loading"] .board { opacity: 0.5; pointer-events: none; }
 .priority[data-priority="High"]   { background: var(--high-bg);   color: var(--high-fg); }
 .priority[data-priority="Medium"] { background: var(--medium-bg); color: var(--medium-fg); }
 .priority[data-priority="Low"]    { background: var(--low-bg);    color: var(--low-fg); }
+.due.overdue { background: var(--error-bg); color: var(--error-fg); }
 .assignee { display: inline-flex; align-items: center; gap: 0.35rem; }
 .assignee::before {
   content: "";
@@ -404,6 +439,7 @@ body[data-state="loading"] .board { opacity: 0.5; pointer-events: none; }
   letter-spacing: 0.02em;
 }
 .task-form input[type="text"],
+.task-form input[type="date"],
 .task-form textarea,
 .task-form select {
   font: inherit;
@@ -418,6 +454,7 @@ body[data-state="loading"] .board { opacity: 0.5; pointer-events: none; }
 }
 .task-form textarea { resize: vertical; min-height: 4.5rem; }
 .task-form input[type="text"]:focus,
+.task-form input[type="date"]:focus,
 .task-form textarea:focus,
 .task-form select:focus {
   outline: none;

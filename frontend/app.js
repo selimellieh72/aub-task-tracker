@@ -78,6 +78,15 @@ function createCard(task) {
   assignee.textContent = task.assignee || "Unassigned";
 
   meta.append(priority, assignee);
+
+  // Due date pill. `is_overdue` is computed by the backend (Done is never overdue).
+  if (task.due_date) {
+    const due = document.createElement("span");
+    due.className = task.is_overdue ? "due overdue" : "due";
+    due.textContent = task.is_overdue ? `Overdue · ${task.due_date}` : `Due ${task.due_date}`;
+    meta.append(due);
+  }
+
   card.append(meta);
 
   const editButton = document.createElement("button");
@@ -153,6 +162,8 @@ async function moveTask(id, targetStatus) {
       tasks = tasks.map((t) => (t.id === id ? updated : t));
       renderBoard(tasks);
       setState("ready");
+      // Filtering happens on the server: the moved task may no longer match.
+      if (filterQuery()) fetchTasks();
       return;
     }
 
@@ -214,6 +225,7 @@ function openModal(task = null) {
     form.elements.description.value = task.description;
     form.elements.assignee.value = task.assignee ?? "";
     form.elements.priority.value = task.priority;
+    form.elements.due_date.value = task.due_date ?? "";
     form.elements.status.value = task.status;
   }
 
@@ -226,6 +238,7 @@ function closeModal() {
 }
 
 // Reads the form into an API payload. Empty description -> "", empty assignee -> null.
+// The date input is already "YYYY-MM-DD"; empty -> null, which clears it on PATCH.
 function readForm() {
   const fields = form.elements;
   return {
@@ -233,6 +246,7 @@ function readForm() {
     description: fields.description.value.trim(),
     assignee: fields.assignee.value.trim() || null,
     priority: fields.priority.value,
+    due_date: fields.due_date.value || null,
     status: fields.status.value,
   };
 }
@@ -253,8 +267,9 @@ async function submitForm(event) {
   if (editingTask === null) {
     method = "POST";
     url = `${API_BASE}/tasks`;
-    const { status: _ignored, ...createFields } = values; // new tasks start as ToDo
-    payload = createFields;
+    const { status: _ignored, due_date: dueDate, ...createFields } = values; // new tasks start as ToDo
+    // Blank due date: leave the key out entirely rather than posting a null.
+    payload = dueDate === null ? createFields : { ...createFields, due_date: dueDate };
   } else {
     method = "PATCH";
     url = `${API_BASE}/tasks/${editingTask.id}`;
@@ -305,19 +320,43 @@ function enableModal() {
   form.addEventListener("submit", submitForm);
 }
 
+// ---------------------------------------------------------------- filters
+
+// Active board filters. Filtering is backend-driven, so this is turned into
+// GET /tasks query params rather than applied to the loaded tasks.
+const filters = { overdue: false };
+
+// "" when nothing is filtered, otherwise e.g. "overdue=true".
+function filterQuery() {
+  const params = new URLSearchParams();
+  if (filters.overdue) params.set("overdue", "true");
+  return params.toString();
+}
+
+function enableFilters() {
+  document.getElementById("filter-overdue").addEventListener("change", (event) => {
+    filters.overdue = event.target.checked;
+    fetchTasks();
+  });
+}
+
 // ---------------------------------------------------------------- data
 
 async function fetchTasks() {
   setState("loading", "Loading tasks…");
+  const query = filterQuery();
   try {
-    const response = await fetch(`${API_BASE}/tasks`);
+    const response = await fetch(`${API_BASE}/tasks${query ? `?${query}` : ""}`);
     if (!response.ok) {
       throw new Error(`Server responded with ${response.status}`);
     }
     tasks = await response.json();
     renderBoard(tasks);
     if (tasks.length === 0) {
-      setState("empty", "No tasks yet. Create one to get started.");
+      setState(
+        "empty",
+        query ? "No tasks match the current filters." : "No tasks yet. Create one to get started."
+      );
     } else {
       setState("ready");
     }
@@ -330,5 +369,6 @@ async function fetchTasks() {
 document.addEventListener("DOMContentLoaded", () => {
   enableDragAndDrop();
   enableModal();
+  enableFilters();
   fetchTasks();
 });

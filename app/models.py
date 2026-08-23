@@ -1,11 +1,11 @@
 """Pydantic models for the Task Tracker (per ADR-001): task enums, the
 create/update input models, and the API response model."""
 
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
 
 
 class TaskStatus(str, Enum):
@@ -36,6 +36,7 @@ class TaskCreate(BaseModel):
     assignee: Optional[str] = Field(default=None, max_length=100)
     status: TaskStatus = TaskStatus.TODO
     priority: TaskPriority = TaskPriority.MEDIUM
+    due_date: Optional[date] = None
 
     @field_validator("title")
     @classmethod
@@ -51,6 +52,7 @@ class TaskUpdate(BaseModel):
     assignee: Optional[str] = Field(default=None, max_length=100)
     status: Optional[TaskStatus] = None
     priority: Optional[TaskPriority] = None
+    due_date: Optional[date] = None
 
     @field_validator("title")
     @classmethod
@@ -67,5 +69,16 @@ class TaskResponse(BaseModel):
     assignee: Optional[str] = None
     status: TaskStatus
     priority: TaskPriority
+    due_date: Optional[date] = None
     created_at: datetime
     updated_at: datetime
+
+    @computed_field
+    @property
+    def is_overdue(self) -> bool:
+        """True when an unfinished task's due date is before today (server local date)."""
+        return (
+            self.due_date is not None
+            and self.due_date < date.today()
+            and self.status != TaskStatus.DONE
+        )
