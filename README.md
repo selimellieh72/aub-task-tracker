@@ -81,4 +81,28 @@ http://localhost:8000/docs
 
 ## Frontend
 
-Open `frontend/index.html` directly in your browser (placeholder for now — it will call the API once CRUD endpoints exist).
+Open `frontend/index.html` directly in your browser (`file://` is allowed by CORS) or serve the folder on port 5500. The board talks to `http://localhost:8000`, so start the server first.
+
+## Run the tests
+
+```bash
+venv/bin/python -m pytest -v        # or just `pytest` with the venv activated
+```
+
+## Mid-course project (branch `mid-course-project`)
+
+Two features were added with an AI-assisted workflow: **due dates + overdue filter** and **tags + tag filter**.
+
+| Step | Command |
+|------|---------|
+| Backend | `uvicorn app.main:app --reload --port 8000` |
+| Frontend | open `frontend/index.html` in a browser |
+| Tests | `venv/bin/python -m pytest -v` (42 tests) |
+
+New API surface:
+
+- `due_date` (`YYYY-MM-DD` or `null`) and `tags` (`["bug", "backend"]`) on `POST /tasks` / `PATCH /tasks/{id}`
+- `is_overdue` (read-only, computed) on every task response
+- `GET /tasks?overdue=true&tag=bug` — both filters combine with `status` / `priority`
+
+Documentation for the project lives in [`docs/midcourse/`](docs/midcourse/): user stories, mini-ADR, prompt log, verification (incl. break tests), and reflection.
