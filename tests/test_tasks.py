@@ -140,6 +140,13 @@ def test_patch_same_status_returns_422(client: TestClient, created_task: dict):
     assert "Invalid status transition from ToDo to ToDo" in r.json()["detail"]
 
 
+def test_patch_null_title_returns_422(client: TestClient, created_task: dict):
+    r = client.patch(f"/tasks/{created_task['id']}", json={"title": None})
+    assert r.status_code == 422
+    # nothing was written
+    assert client.get(f"/tasks/{created_task['id']}").json() == created_task
+
+
 def test_patch_with_read_only_field_returns_422(client: TestClient, created_task: dict):
     r = client.patch(
         f"/tasks/{created_task['id']}",
