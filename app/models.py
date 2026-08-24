@@ -81,9 +81,11 @@ class TaskUpdate(BaseModel):
 
     @field_validator("title")
     @classmethod
-    def _strip_title(cls, value: Optional[str]) -> Optional[str]:
+    def _strip_title(cls, value: Optional[str]) -> str:
+        # Only runs when title is present in the payload, so an omitted title
+        # still means "leave unchanged" — but an explicit null is rejected.
         if value is None:
-            return None
+            raise ValueError("title must not be null")
         return _validate_title(value)
 
     @field_validator("tags")
